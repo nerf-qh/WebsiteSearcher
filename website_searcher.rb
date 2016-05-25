@@ -4,7 +4,7 @@ require 'uri'
 require 'net/http'
 require 'logger'
 
-THREAD_COUNT = 4
+THREAD_COUNT = 20
 
 FILE_INPUT = 'urls.txt'.freeze
 FILE_OUTPUT = 'results.txt'.freeze
@@ -83,7 +83,7 @@ class Searcher
       if site.check(@term)
         @mutes.synchronize { @results << site }
       else
-        @errors << site.error unless site.error.nil?
+        @errors << "site #{site} - #{}{site.error}" unless site.error.nil?
       end
     end
   end
@@ -123,10 +123,14 @@ class Site
         uri = get_redirect_uri(response['location'])
         body = get_body(uri, limit - 1)
       end
-    rescue SocketError => e
-      $logger.warn("Site #{@url} SocketError: #{e}")
-    rescue Net::OpenTimeout => e
-      $logger.warn("Site #{@url} Net::OpenTimeout: #{e}")
+    rescue SocketError, Net::OpenTimeout  => e
+      #first check - try to add www
+      if limit == 10
+        uri.hostname = "www.#{uri.hostname}"
+        body = get_body(URI(uri.to_s), limit - 1)
+      else
+        $logger.warn("Site #{@url} ERROR: #{e}")
+      end
     rescue => e
       $logger.error("Site #{@url} ERROR: #{e}")
       @error = e
@@ -151,6 +155,11 @@ class Site
       uri.scheme = @uri.scheme
     else
       @uri.scheme = uri.scheme
+    end
+
+    #fix redirect path
+    if !uri.path.nil? && uri.path[0] != '/'
+      uri.path = "/#{uri.path}"
     end
 
     URI(uri.to_s)
