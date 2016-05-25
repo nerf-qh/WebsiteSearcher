@@ -83,7 +83,7 @@ class Searcher
       if site.check(@term)
         @mutes.synchronize { @results << site }
       else
-        @errors << "site #{site} - #{}{site.error}" unless site.error.nil?
+        @errors << "site #{site} - #{site.error}" unless site.error.nil?
       end
     end
   end
@@ -100,20 +100,20 @@ class Site
   end
 
   def check(term)
-    body = get_body(@uri)
     valid = false
+    body = get_body(@uri)
     valid = check_body(body, term) unless body.nil?
     $logger.debug "check: #{valid} - #{@url} "
     valid
   end
 
-  private
   def get_body(uri, limit = 10)
     fail ArgumentError, 'HTTP redirect too deep' if limit == 0
     $logger.debug uri.to_s
     body = nil
     begin
       response = Net::HTTP.get_response(uri)
+
       case response
       when Net::HTTPSuccess
         $logger.debug "Site #{@url}, body length: #{response.body.length}"
@@ -129,10 +129,9 @@ class Site
         uri.hostname = "www.#{uri.hostname}"
         body = get_body(URI(uri.to_s), limit - 1)
       else
-        $logger.warn("Site #{@url} ERROR: #{e}")
+        @error = e
       end
     rescue => e
-      $logger.error("Site #{@url} ERROR: #{e}")
       @error = e
     end
     body
