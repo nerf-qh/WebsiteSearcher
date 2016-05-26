@@ -2,33 +2,33 @@ require 'csv'
 require 'thread'
 require 'uri'
 require 'net/http'
-require 'logger'
+# require 'logger'
 
 THREAD_COUNT = 20
 
 FILE_INPUT = 'urls.txt'.freeze
 FILE_OUTPUT = 'results.txt'.freeze
 
-$logger = Logger.new('| tee logfile.log')
-if !ENV['DEBUG'].nil? && ENV['DEBUG'] == 'true'
-  $logger.level = Logger::DEBUG
-else
-  $logger.level = Logger::WARN
-end
+# $logger = Logger.new('| tee logfile.log')
+# if !ENV['DEBUG'].nil? && ENV['DEBUG'] == 'true'
+# $logger.level = Logger::DEBUG
+# else
+# $logger.level = Logger::WARN
+# end
 
 def main
   fail 'Please enter search term as a first param' if ARGV.empty?
-  $logger.info "Start"
+  # $logger.info "Start"
   term = ARGV[0]
   sites = Data.read
 
-  $logger.info "term: #{term}"
+  # $logger.info "term: #{term}"
 
   searcher = Searcher.new(sites, term)
   results = searcher.perform
   Data.write(results) if results.any?
-  $logger.warn "Errors with sites: #{searcher.errors}" if searcher.errors.any?
-  $logger.info "Finish"
+  # $logger.warn "Errors with sites: #{searcher.errors}" if searcher.errors.any?
+  # $logger.info "Finish"
 end
 
 class Data
@@ -41,7 +41,7 @@ class Data
       sites.each { |site| f.puts(site) }
     end
   rescue => e
-    $logger.error "Unable to save file: #{e}"
+    # $logger.error "Unable to save file: #{e}"
   end
 end
 
@@ -103,23 +103,23 @@ class Site
     valid = false
     body = get_body(@uri)
     valid = check_body(body, term) unless body.nil?
-    $logger.debug "check: #{valid} - #{@url} "
+    # $logger.debug "check: #{valid} - #{@url} "
     valid
   end
 
   def get_body(uri, limit = 10)
     fail ArgumentError, 'HTTP redirect too deep' if limit == 0
-    $logger.debug uri.to_s
+    # $logger.debug uri.to_s
     body = nil
     begin
       response = Net::HTTP.get_response(uri)
 
       case response
       when Net::HTTPSuccess
-        $logger.debug "Site #{@url}, body length: #{response.body.length}"
+        # $logger.debug "Site #{@url}, body length: #{response.body.length}"
         body = response.body
       when Net::HTTPRedirection
-        $logger.debug "Redirect: #{11 - limit}"
+        # $logger.debug "Redirect: #{11 - limit}"
         uri = get_redirect_uri(response['location'])
         body = get_body(uri, limit - 1)
       end
